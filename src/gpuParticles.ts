@@ -255,7 +255,7 @@ function draw(
 }
 
 // total objects
-let NUM = 150000, MAX = 300000
+let NUM = 150000, MAX = 3000000
 async function run(){
     const canvas = document.querySelector('canvas')
     if (!canvas)

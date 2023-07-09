@@ -1,5 +1,7 @@
-import { mat4 } from "gl-matrix";
 import computeTransform from "./shaders/compute.transform.wgsl?raw";
+import { mat4 } from "gl-matrix";
+
+const NUM = 1000000;
 
 async function initWebGPU() {
   if (!navigator.gpu) throw new Error("Not Support WebGPU");
@@ -14,6 +16,7 @@ async function initWebGPU() {
   });
   return device;
 }
+
 async function initPipeline(
   device: GPUDevice,
   modelMatrix: Float32Array,
@@ -35,9 +38,9 @@ async function initPipeline(
     size: modelMatrix.byteLength,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
-  console.time("writeBuffer");
+
   device.queue.writeBuffer(modelBuffer, 0, modelMatrix);
-  console.timeEnd("writeBuffer");
+
   // hold a 4x4 projection buffer
   const projectionBuffer = device.createBuffer({
     size: projection.byteLength,
@@ -88,57 +91,38 @@ async function initPipeline(
   });
   return { pipeline, bindGroup, mvpBuffer };
 }
+
 async function run() {
-  cpu.innerHTML = gpu.innerHTML = "-";
-  button.innerHTML = "Testing ...";
-  button.disabled = true;
-  // small delay for rendering UI
-  await new Promise((res) => setTimeout(res));
-  // papare data
   const fakeMatrix = mat4.create();
-  const modelMatrix = new Float32Array(NUM * 4 * 4); // hold gpu matrix
-  const matrixArray = []; // hold cpu matrix
-  const projection = fakeMatrix as Float32Array; // fake projection matrix
+  console.log("fakeMatrix--->", fakeMatrix);
+  const modelMatrix = new Float32Array(NUM * 4 * 4);
+  const projection = fakeMatrix as Float32Array;
+
   for (let i = 0; i < NUM; i++) {
-    matrixArray.push(fakeMatrix);
     modelMatrix.set(fakeMatrix, i * 4 * 4);
   }
 
-  // start test cpu time
-  console.time("cpu multiply x10");
-  let start = performance.now();
-  for (let i = 0; i < 10; i++)
-    for (let i = 0; i < NUM; i++) {
-      let m = matrixArray[i];
-      mat4.multiply(m, projection, m);
-    }
-  cpu.innerHTML = ((performance.now() - start) / 10).toFixed(2);
-  console.timeEnd("cpu multiply x10");
-  console.log("spu result--->", matrixArray);
-
-  // papare gpu
   const device = await initWebGPU();
   const { pipeline, bindGroup, mvpBuffer } = await initPipeline(
     device,
     modelMatrix,
     projection
   );
-  // papare a read buffer to map mvp back to js
+
   const readBuffer = device.createBuffer({
     size: modelMatrix.byteLength,
     usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
   });
-  // run test x300
+
   const commandEncoder = device.createCommandEncoder();
-  for (let i = 0; i < 300; i++) {
-    const computePass = commandEncoder.beginComputePass();
-    computePass.setPipeline(pipeline);
-    computePass.setBindGroup(0, bindGroup);
-    console.log("dispatchWorkgroups---->", NUM, Math.ceil(NUM / 128));
-    computePass.dispatchWorkgroups(Math.ceil(NUM / 128));
-    computePass.end();
-  }
-  // copy mvpBuffer will be done after all computePasses
+
+  const computePass = commandEncoder.beginComputePass();
+  computePass.setPipeline(pipeline);
+  computePass.setBindGroup(0, bindGroup);
+  console.log("dispatchWorkgroups---->", NUM, Math.ceil(NUM / 128));
+  computePass.dispatchWorkgroups(Math.ceil(NUM / 128));
+  computePass.end();
+
   commandEncoder.copyBufferToBuffer(
     mvpBuffer,
     0,
@@ -147,33 +131,13 @@ async function run() {
     modelMatrix.byteLength
   );
   device.queue.submit([commandEncoder.finish()]);
-  // compute time by mapAsync
-  console.time("gpu multiply x300");
-  start = performance.now();
-  // map readBuffer from GPU to CPU/JS
+
   await readBuffer.mapAsync(GPUMapMode.READ);
-  gpu.innerHTML = ((performance.now() - start) / 300).toFixed(2);
-  console.timeEnd("gpu multiply x300");
-  // transfor buffer to JS object
   const copyArrayBuffer = readBuffer.getMappedRange();
   const result = new Float32Array(copyArrayBuffer);
   console.log("gpu result--->", result);
-  // unmap GPU buffer and release CPU/JS buffer
+
   readBuffer.unmap();
-  // reset UI
-  button.disabled = false;
-  button.innerHTML = "Run";
 }
 
-// total count
-let NUM = 1000000;
-let select = document.querySelector("#select") as HTMLSelectElement;
-let button = document.querySelector("button") as HTMLButtonElement;
-let cpu = document.querySelector("#cpu") as HTMLSpanElement;
-let gpu = document.querySelector("#gpu") as HTMLSpanElement;
-select.addEventListener("change", (e: any) => {
-  console.log(e.target.value);
-  NUM = +e.target.value;
-  run();
-});
-button.addEventListener("click", run);
+run();

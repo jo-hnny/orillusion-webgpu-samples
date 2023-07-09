@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,38 +8,44 @@
     <style>
         html,
         body {
-            font-family: Avenir,Helvetica,Arial,sans-serif;
+            font-family: Avenir, Helvetica, Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
             margin: 0;
             width: 100%;
             height: 100%;
             display: flex;
         }
-        .menu{
+
+        .menu {
             width: 200px;
             height: 100%;
             border-right: 1px solid #888;
             overflow: auto;
             padding: 0 10px;
         }
-        .menu > a{
+
+        .menu>a {
             display: block;
             margin: 5px 0;
             color: #045b88;
             text-decoration: none;
             cursor: pointer;
         }
-        a:hover{
+
+        a:hover {
             text-decoration: underline;
         }
-        a.active{
+
+        a.active {
             color: red;
         }
-        iframe{
+
+        iframe {
             flex-grow: 1;
             border: none;
         }
-        .src{
+
+        .src {
             position: fixed;
             right: 10px;
             bottom: 10px;
@@ -49,16 +56,18 @@
             font-size: 16px;
             line-height: 40px;
             border-radius: 50%;
-            border:none;
+            border: none;
             opacity: 0.6;
             cursor: pointer;
             text-decoration: none !important;
         }
-        .src:hover{
+
+        .src:hover {
             opacity: 1;
         }
     </style>
 </head>
+
 <body>
     <div class="menu">
         <h3>WebGPU Samples</h3>
@@ -82,26 +91,31 @@
         <a class="sample" target="shadowMapping">Shadow Mapping</a>
         <a class="sample" target="gpuCompute">GPU Compute</a>
         <a class="sample" target="gpuParticles">GPU Particles</a>
+        <a class="sample" target="googleRect">Google rect demo</a>
+        <a class="sample" target="matCompute">matCompute</a>
+        <a class="sample" target="WebGLCubeMultiple">WebGL Cube Multiple</a>
+        <a class="sample" target="WebGPUCubeMultiple">WebGPU Cube Multiple</a>
+        <a class="sample" target="sum">Sum</a>
     </div>
     <iframe></iframe>
-    <a class="src" target="_blank">&lt; &gt;</a>
+    <!-- <a class="src" target="_blank">&lt; &gt;</a> -->
     <script>
         const iframe = document.querySelector('iframe')
         const button = document.querySelector('.src')
         const samples = document.querySelectorAll('.sample')
-        for(let sample of samples){
-            sample.addEventListener('click', ()=>{
+        for (let sample of samples) {
+            sample.addEventListener('click', () => {
                 window.location.hash = sample.target
                 iframe.src = './samples/' + sample.target + '.html'
-                button.href = 'https://github.com/Orillusion/orillusion-webgpu-samples/tree/main/src/' + sample.target + '.ts'
                 document.querySelector('.active').classList.remove('active')
                 sample.classList.add('active')
             })
         }
-        if(window.location.hash)
+        if (window.location.hash)
             document.querySelector(`[target=${window.location.hash.slice(1)}]`).click()
         else
             document.querySelector('.sample.active').click()
     </script>
 </body>
+
 </html>
