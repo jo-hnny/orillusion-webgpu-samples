@@ -16,7 +16,7 @@ fn main(
 
   //初始化共享内存，即每个位置对应原始数据
   //第一个线程组中的shardData[0] = inData[0]
-  //第二个线程组中的shardData[0] = inData[256]
+  //第二个线程组中的shardData[0] = inData[1024]
   sharedData[local_id] = inData[global_id.x];
 
   //线程同步，确保每个线程都完成了上面的步骤
